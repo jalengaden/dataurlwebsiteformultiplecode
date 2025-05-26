@@ -1,0 +1,12 @@
+{
+  "name": "game-launcher-generator",
+  "version": "1.0.0",
+  "description": "Generate a data URL game launcher from HTML snippets",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "express": "^4.18.4"
+  }
+}
