@@ -7,142 +7,190 @@
   <style>
     body {
       font-family: Arial, sans-serif;
-      margin: 30px auto;
       max-width: 700px;
+      margin: 40px auto;
       background: #f9f9f9;
       padding: 20px;
-      border-radius: 8px;
+      border-radius: 6px;
+      box-shadow: 0 0 15px rgba(0,0,0,0.1);
     }
     textarea {
       width: 100%;
-      height: 200px;
+      height: 180px;
       font-family: monospace;
-      margin-bottom: 10px;
+      font-size: 14px;
+      padding: 10px;
+      border-radius: 4px;
       border: 1px solid #ccc;
-      border-radius: 5px;
       resize: vertical;
     }
     button {
+      margin-top: 10px;
+      padding: 10px 18px;
+      font-size: 16px;
       background-color: #007bff;
       color: white;
       border: none;
-      padding: 10px 20px;
       border-radius: 5px;
       cursor: pointer;
-      margin-bottom: 10px;
+      transition: background-color 0.25s ease;
     }
     button:disabled {
       background-color: #aaa;
       cursor: not-allowed;
     }
-    #dataUrl {
-      word-wrap: break-word;
+    button:hover:not(:disabled) {
+      background-color: #0056b3;
+    }
+    .output {
+      margin-top: 20px;
+      word-break: break-all;
       background: #eee;
-      padding: 10px;
+      padding: 12px;
       border-radius: 5px;
-      user-select: all;
       max-height: 150px;
       overflow-y: auto;
+      font-size: 13px;
       font-family: monospace;
     }
-    #previewLink {
+    .preview-link {
+      margin-top: 15px;
       display: inline-block;
-      margin-top: 10px;
+      font-weight: bold;
       color: #007bff;
+      text-decoration: none;
+    }
+    .preview-link:hover {
       text-decoration: underline;
-      cursor: pointer;
     }
   </style>
 </head>
 <body>
   <h1>Multi-Game Data URL Generator</h1>
-  <p><b>Instructions:</b> Paste multiple game HTML blocks below. Separate each game with <code>===</code> on its own line.</p>
-  <textarea id="htmlCode" placeholder="Paste your game HTML blocks here..."></textarea>
-  <br />
+  <p><strong>Instructions:</strong> Paste your HTML game codes below, separated by <code>---GAME---</code> (three dashes + the word GAME + three dashes). Click "Generate Data URL" to create a multi-game website URL with tabs.</p>
+
+  <textarea id="htmlCode" placeholder="Paste your games HTML here, separated by ---GAME---"></textarea>
+  <br/>
   <button id="generateButton" onclick="generateDataUrl()">Generate Data URL</button>
-  <button id="copyButton" onclick="copyToClipboard()" disabled>Copy URL to Clipboard</button>
-  
-  <div id="dataUrl" style="margin-top:15px;"></div>
-  <a id="previewLink" href="#" target="_blank" style="display:none;">Preview Generated Site</a>
+  <button id="copyButton" onclick="copyToClipboard()" disabled>Copy Data URL</button>
+
+  <div class="output" id="dataUrl" aria-live="polite" role="region"></div>
+  <a id="previewLink" class="preview-link" href="#" target="_blank" rel="noopener" style="display:none;">Preview Your Multi-Game Site</a>
 
   <script>
     function generateDataUrl() {
-      const input = document.getElementById('htmlCode').value.trim();
-      if (!input) {
-        alert('Please paste your game HTML code blocks!');
+      const rawInput = document.getElementById('htmlCode').value.trim();
+      if (!rawInput) {
+        alert('Please paste some HTML code for your games.');
+        return;
+      }
+      
+      // Split input into separate games by ---GAME--- separator
+      const parts = rawInput.split(/---GAME---/i).map(p => p.trim()).filter(p => p.length > 0);
+      if (parts.length === 0) {
+        alert('No game code found. Use ---GAME--- to separate each game.');
         return;
       }
 
-      // Split games by lines that have exactly ===
-      const games = input.split(/^\s*===\s*$/m);
+      // Build the multi-game HTML with tabs
+      let tabsHtml = '';
+      let contentHtml = '';
 
-      // Prepare navigation buttons and game containers
-      let navButtons = '';
-      let gameDivs = '';
-
-      games.forEach((gameHtml, i) => {
-        const gameId = 'game' + i;
-        navButtons += `<button onclick="showGame('${gameId}')">Game ${i + 1}</button> `;
-        gameDivs += `
-          <div id="${gameId}" style="display: ${i === 0 ? 'block' : 'none'}; border:1px solid #ccc; padding:10px; margin-top:10px;">
-            ${gameHtml}
-          </div>`;
+      parts.forEach((gameCode, i) => {
+        const tabId = 'tab' + i;
+        const checkedAttr = i === 0 ? 'checked' : '';
+        tabsHtml += `
+          <input type="radio" name="tabs" id="${tabId}" ${checkedAttr}>
+          <label for="${tabId}">Game ${i + 1}</label>
+        `;
+        contentHtml += `
+          <section id="content${i}" class="tab-content">${gameCode}</section>
+        `;
       });
 
-      // Full HTML for the generated site
       const finalHtml = `
-<!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="UTF-8" />
-<title>Multi-Game Site</title>
-<style>
-  body { font-family: Arial, sans-serif; margin: 10px; }
-  button { margin-right: 5px; margin-bottom: 10px; padding: 5px 10px; cursor: pointer; }
-</style>
-</head>
-<body>
-  <h1>Pick a Game</h1>
-  <div id="nav">${navButtons}</div>
-  ${gameDivs}
+        <!DOCTYPE html>
+        <html lang="en">
+        <head>
+          <meta charset="UTF-8" />
+          <meta name="viewport" content="width=device-width, initial-scale=1" />
+          <title>Multi-Game Site</title>
+          <style>
+            body {
+              font-family: Arial, sans-serif;
+              margin: 0; padding: 20px; background: #f0f0f0;
+            }
+            /* Tabs styling */
+            input[name="tabs"] {
+              display: none;
+            }
+            label {
+              padding: 10px 20px;
+              margin-right: 5px;
+              background: #ddd;
+              cursor: pointer;
+              border-radius: 5px 5px 0 0;
+              user-select: none;
+              transition: background 0.3s ease;
+              font-weight: bold;
+            }
+            input[name="tabs"]:checked + label {
+              background: #007bff;
+              color: white;
+            }
+            .tab-content {
+              display: none;
+              padding: 15px;
+              background: white;
+              border-radius: 0 5px 5px 5px;
+              box-shadow: 0 2px 5px rgb(0 0 0 / 0.1);
+              min-height: 300px;
+            }
+            #tab0:checked ~ #content0,
+            #tab1:checked ~ #content1,
+            #tab2:checked ~ #content2,
+            #tab3:checked ~ #content3,
+            #tab4:checked ~ #content4,
+            #tab5:checked ~ #content5,
+            #tab6:checked ~ #content6,
+            #tab7:checked ~ #content7,
+            #tab8:checked ~ #content8,
+            #tab9:checked ~ #content9 {
+              display: block;
+            }
+          </style>
+        </head>
+        <body>
+          <h1>Multi-Game Site</h1>
+          <nav class="tabs">
+            ${tabsHtml}
+          </nav>
+          ${contentHtml}
+        </body>
+        </html>
+      `;
 
-  <script>
-    function showGame(id) {
-      // Hide all games
-      const gameDivs = document.querySelectorAll('div[id^="game"]');
-      gameDivs.forEach(div => div.style.display = 'none');
-      // Show selected game
-      document.getElementById(id).style.display = 'block';
-    }
-  </script>
-</body>
-</html>`;
-
-      // Encode final HTML into data URL
       const encoded = encodeURIComponent(finalHtml);
       const dataUrl = 'data:text/html;charset=utf-8,' + encoded;
 
-      // Show it on page
-      const output = document.getElementById('dataUrl');
-      output.textContent = dataUrl;
+      const dataUrlElem = document.getElementById('dataUrl');
+      dataUrlElem.textContent = dataUrl;
 
       // Enable copy button
-      document.getElementById('copyButton').disabled = false;
+      const copyBtn = document.getElementById('copyButton');
+      copyBtn.disabled = false;
 
-      // Set preview link
+      // Show preview link
       const previewLink = document.getElementById('previewLink');
       previewLink.href = dataUrl;
       previewLink.style.display = 'inline-block';
-      previewLink.textContent = 'Preview Generated Site';
     }
 
     function copyToClipboard() {
-      const text = document.getElementById('dataUrl').textContent;
-      navigator.clipboard.writeText(text).then(() => {
-        alert('Data URL copied to clipboard!');
-      }).catch(err => {
-        alert('Failed to copy: ' + err);
-      });
+      const dataUrl = document.getElementById('dataUrl').textContent;
+      navigator.clipboard.writeText(dataUrl)
+        .then(() => alert('Data URL copied to clipboard!'))
+        .catch(err => alert('Failed to copy: ' + err));
     }
   </script>
 </body>
