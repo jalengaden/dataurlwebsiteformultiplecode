@@ -1,12 +1,14 @@
 {
-  "name": "game-launcher-generator",
+  "name": "multi-game-dataurl-generator",
   "version": "1.0.0",
-  "description": "Generate a data URL game launcher from HTML snippets",
+  "description": "Simple app to generate multi-game data URLs",
   "main": "server.js",
   "scripts": {
     "start": "node server.js"
   },
+  "author": "Johann Alengaden",
+  "license": "MIT",
   "dependencies": {
-    "express": "^4.18.4"
+    "express": "^4.18.2"
   }
 }
